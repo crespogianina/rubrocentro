@@ -1,0 +1,132 @@
+# TASKS — RubroCero, Fase 1 (MVP)
+
+Checklist de trabajo dividido en stages, y cada stage en tareas chicas (pensadas para completarse en una sentada y terminar en un PR). Marcá con `[x]` a medida que avanzás — es el rastro más simple posible, y si más adelante sumás a alguien más al proyecto, cada ítem se puede pasar a un Issue de GitHub sin reescribir nada.
+
+**Orden:** los stages están ordenados por dependencia — no hace falta terminar un stage al 100% para arrancar el siguiente en varios casos (se marca dónde se puede paralelizar), pero seguir el orden general evita construir sobre algo que todavía no existe.
+
+**Nota:** este repo ya tiene un scaffold inicial armado (ver `CLAUDE.md` para el detalle completo). Los ítems marcados `[x]` abajo ya están resueltos por ese scaffold — revisalos igual antes de asumir que están 100% terminados, en particular los marcados con 🔶 (parcial).
+
+---
+
+## Stage 0 — Repositorio y monorepo
+
+- [ ] Crear repositorio privado en GitHub
+- [ ] Proteger la rama `main` (require PR + CI antes de mergear)
+- [x] Inicializar monorepo con `pnpm workspaces` (`pnpm-workspace.yaml` con `apps/*` y `packages/*`)
+- [x] Crear `packages/shared-types` (con algunos DTOs ilustrativos, no exhaustivos)
+- [ ] 🔶 Configurar ESLint + Prettier compartidos en la raíz — cada app trae su propio linter del generador (oxlint en backend, ESLint en frontend); unificar en la raíz queda pendiente, no es bloqueante
+- [x] Crear workflow de GitHub Actions: lint + test en backend, build en frontend, en cada push (`.github/workflows/ci.yml`) — necesita `pnpm-lock.yaml` commiteado para que `--frozen-lockfile` funcione
+- [x] Agregar este `README.md`, `TASKS.md` y `CLAUDE.md` al repo
+- [x] Crear `.gitignore` (node_modules, dist, `.env`, `*.db`, `apps/desktop/release`)
+- [ ] `git init` + primer commit (no se hizo en el entorno donde se armó el scaffold — hacerlo al clonar/mover este repo a tu máquina)
+
+## Stage 1 — Base de datos (schema completo antes de tocar código de negocio)
+
+- [x] Crear `apps/backend` con NestJS (`nest new`)
+- [x] 🔶 Instalar y configurar Prisma dentro de `apps/backend` — dependencias agregadas y `schema.prisma` escrito completo; falta correr `pnpm install` + `prisma generate` en una máquina con acceso normal a internet (ver nota en `CLAUDE.md`)
+- [x] Definir en `schema.prisma`: `categoria` (jerárquica), `marca`, `producto`, `atributo`, `variante`, `deposito`, `stock`, `movimiento`
+- [x] Definir: `rol`, `permiso`, `rol_permiso`, `usuario`
+- [x] Definir: `proveedor`, `compra`, `detalle_compra`, `cliente`, `venta`, `detalle_venta`, `metodo_pago`, `pago`
+- [x] Definir: `precio` (con vigencia — no un campo mutable), `lista_precio`
+- [x] Definir: `tipo_cotizacion`, `historial_cotizacion`
+- [x] Definir: `comprobante`, `trabajo_impresion`, `auditoria`, `configuracion_negocio`, `backup_log`
+- [ ] Primera migración (`prisma migrate dev`) y revisión manual del `.sql` generado — pendiente, requiere correr en una máquina sin la restricción de red del sandbox donde se armó este scaffold
+- [ ] 🔶 Script de seed con datos de ejemplo realistas — hay un `prisma/seed.ts` stub que solo carga `ConfiguracionNegocio`, con un TODO detallado del resto (roles/permisos, admin, categorías, marcas, depósito, tipos de cotización, métodos de pago, ~10-15 productos de ejemplo)
+- [x] Documentar en `apps/backend/prisma/README.md` cualquier decisión de modelado que no sea obvia mirando el schema
+
+*Este stage se beneficia de estar 100% resuelto antes de seguir — cambiar el schema a mitad del Stage 2 en adelante genera migraciones desprolijas.*
+
+## Stage 2 — Backend: dominio y casos de uso (sin HTTP, sin Prisma real todavía)
+
+- [ ] 🔶 Módulo `catalogo`: entidades de dominio (Producto, Variante) + puerto `ProductoRepository` — `Producto` (entidad + factory + validaciones) y el puerto ya están; falta la entidad `Variante`
+- [x] Caso de uso `CrearProducto` + unit tests
+- [ ] Caso de uso `CrearVariante` + unit tests
+- [ ] Módulo `stock`: puerto `StockRepository` + entidad Movimiento
+- [ ] Caso de uso `RegistrarMovimiento` (venta/compra/ajuste) + unit tests — incluyendo el caso "no permitir vender más stock del disponible"
+- [ ] Caso de uso `AjustarStock` (manual, con motivo obligatorio) + unit tests
+- [ ] Módulo `identidad`: hash de contraseña (argon2) + generación/validación de JWT, como funciones puras testeables
+- [ ] Caso de uso `AutenticarUsuario` + unit tests
+- [ ] Módulo `cotizaciones`: puerto `CotizacionProvider` + caso de uso `ObtenerCotizacionVigente` (con lógica de "usar la última cacheada si falla la fuente") + unit tests
+
+*Todo este stage se escribe y testea sin base de datos real ni backend HTTP — son funciones y clases puras contra interfaces (puertos). Se puede paralelizar por módulo. El módulo `catalogo` sirve de plantilla concreta para el resto (domain/application/ports/use-cases, con su test) — copiá esa estructura en `stock`, `identidad` y `cotizaciones`.*
+
+## Stage 3 — Backend: infraestructura (los adaptadores)
+
+- [ ] `PrismaProductoRepository` implementando el puerto de Stage 2 + integration tests contra SQLite de prueba
+- [ ] `PrismaStockRepository` + integration tests (probar la transacción real: baja de stock + alta de movimiento juntas)
+- [ ] `PrismaUsuarioRepository`
+- [ ] `DolarApiCotizacionProvider` (cliente HTTP a DolarAPI/ArgentinaDatos) + su test con la respuesta mockeada
+- [ ] Adaptador de impresión — versión inicial simulada (loguea el ticket en vez de imprimir de verdad, para no bloquearse esperando el hardware)
+
+## Stage 4 — Backend: presentación (la API REST)
+
+- [ ] Controller de `catalogo` (productos/variantes) + DTOs + Pipes de validación
+- [ ] Controller de `stock` (movimientos)
+- [ ] Controller de `identidad` (login) + Guard de autenticación (JWT)
+- [ ] Guard de permisos (por rol, contra el catálogo `rol_permiso`)
+- [ ] Filtro global de errores (excepciones de dominio → respuesta HTTP consistente)
+- [ ] Interceptor de logging
+- [x] Swagger/OpenAPI en `/api/docs` — configurado en `main.ts`
+- [x] Prefijo de versión `/api/v1` en todas las rutas — configurado en `main.ts`
+
+## Stage 5 — Frontend: base
+
+- [x] Crear `apps/frontend` con Angular
+- [ ] Layout base: shell, menú lateral, header
+- [ ] Pantalla de login
+- [ ] `AuthService` + `AuthGuard` + `RoleGuard`
+- [ ] `TokenInterceptor` + `ErrorInterceptor`
+- [ ] Servicio HTTP genérico apuntando a `environment.apiUrl` (ya está configurado el `apiUrl` en `environment.ts`/`environment.development.ts`, falta el servicio)
+
+## Stage 6 — Primer feature de punta a punta (plantilla del resto)
+
+- [ ] Pantalla de productos: listar, crear, editar (conectada a la API real de Stage 4)
+- [ ] Pantalla de stock por depósito (consulta + ajuste manual)
+- [ ] Retrospectiva corta: ¿el patrón usado acá sirve para replicar en ventas/compras sin fricción? Ajustar antes de seguir si no.
+
+## Stage 7 — Resto de features (paralelizable entre sí una vez validado el Stage 6)
+
+- [ ] Ventas: carrito, confirmar venta (transacción completa), pantalla de historial
+- [ ] Anulación y devolución de ventas
+- [ ] Compras y proveedores
+- [ ] Clientes (alta básica desde el flujo de venta)
+- [ ] Cotizaciones: barra inferior persistente + sección de consulta/historial
+- [ ] Recalculo de precios sugeridos por categoría/proveedor (manual, con confirmación)
+- [ ] Reportes básicos: valorización de stock, más vendidos
+
+## Stage 8 — Empaquetado de escritorio
+
+- [x] Crear `apps/desktop` con Electron
+- [x] `preload.ts` con `contextBridge` (contextIsolation activado, nodeIntegration desactivado)
+- [ ] Electron levanta el backend NestJS como proceso hijo al iniciar — hay un stub `startBackend()` con los TODO marcados, falta la implementación real (spawn del build compilado, esperar a que levante antes de crear la ventana)
+- [x] 🔶 Configurar `electron-builder` (instalador NSIS para Windows) — `electron-builder.yml` armado, falta completar owner/repo de GitHub Releases y el certificado de firma de código
+- [ ] Acceso directo en la carpeta de Inicio de Windows (auto-arranque)
+- [ ] Configurar `electron-updater` contra GitHub Releases (la dependencia ya está instalada, falta la lógica)
+
+## Stage 9 — Impresión real
+
+- [ ] Reemplazar el adaptador simulado de Stage 3 por impresión térmica real (ESC/POS vía USB)
+- [ ] Adaptador de impresora convencional (spooler de Windows) para comprobantes A4
+- [ ] Cola de impresión persistida (`trabajo_impresion`) con reintentos
+- [ ] Pantalla de "trabajos de impresión con error" + botón reintentar
+
+## Stage 10 — Backup
+
+- [ ] Backup local automático diario (copia del archivo SQLite + `PRAGMA integrity_check`)
+- [ ] Subida automática a Drive/OneDrive (o carpeta sincronizada) o a Backblaze
+- [ ] Registro en `backup_log` + indicador visible en el dashboard ("último backup: hace X hs ✓")
+- [ ] Pantalla de restauración de backup
+
+## Stage 11 — Testing E2E y cierre de MVP
+
+- [ ] Playwright: flujo completo de venta (login → vender → imprimir → ver en historial)
+- [ ] Playwright: flujo de compra y ajuste de stock
+- [ ] Playwright: backup y restauración
+- [ ] Asistente de instalación inicial (crear Admin, configurar negocio/impresoras/backup) dentro de la app
+- [ ] Documentación de instalación para el cliente final (aparte de este repo, es para entregar)
+
+---
+
+## Fuera de esta lista (a propósito)
+
+Rol Técnico y servicio técnico, impresión de comprobantes A4, importador CSV, multi-terminal, ARCA — están en Fase 2/3 del documento de arquitectura, no en este checklist. Agregarlos acá antes de tiempo es la forma más fácil de no terminar nunca la Fase 1.

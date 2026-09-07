@@ -1,0 +1,20 @@
+{
+  "name": "desktop",
+  "version": "0.0.1",
+  "private": true,
+  "description": "RubroCero — shell de escritorio (Electron): levanta el backend local y muestra el frontend.",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json && electron .",
+    "package:win": "pnpm build && electron-builder --win"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0",
+    "typescript": "^5.5.0"
+  }
+}

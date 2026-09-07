@@ -1,0 +1,32 @@
+# Dependencias
+node_modules/
+.pnpm-store/
+
+# Builds
+dist/
+build/
+apps/desktop/release/
+apps/frontend/.angular/
+
+# Entornos y secretos
+.env
+.env.*
+!.env.example
+
+# Base de datos local
+*.db
+*.db-journal
+*.db-wal
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / SO
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+
+# Coverage
+coverage/

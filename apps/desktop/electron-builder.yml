@@ -1,0 +1,24 @@
+appId: com.rubrocero.desktop
+productName: RubroCero
+directories:
+  output: release
+files:
+  - dist/**/*
+  - ../frontend/dist/frontend/**/*
+  - ../backend/dist/**/*
+extraResources: []
+win:
+  target: nsis
+  # TODO: certificado de firma de código (opcional, ver docs/ARQUITECTURA.md
+  # sección "Costos") — sin esto Windows muestra advertencia de "editor desconocido".
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createStartMenuShortcut: true
+  # TODO (Stage 8): agregar acceso directo a la carpeta de Inicio de Windows
+  # para el auto-arranque (ver docs/ARQUITECTURA.md, sección "Disponibilidad
+  # y arranque automático" — NO usar un Windows Service).
+publish:
+  provider: github
+  # TODO: completar owner/repo una vez creado el repositorio, para que
+  # electron-updater tenga de dónde revisar nuevas versiones.

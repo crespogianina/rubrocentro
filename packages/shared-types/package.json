@@ -1,0 +1,8 @@
+{
+  "name": "@rubrocero/shared-types",
+  "version": "0.0.1",
+  "private": true,
+  "description": "DTOs e interfaces compartidas entre apps/backend y apps/frontend — evita duplicar tipos entre los dos.",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

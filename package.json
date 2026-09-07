@@ -1,0 +1,18 @@
+{
+  "name": "rubrocero",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Sistema de gestión de stock y ventas para un local de informática, con base genérica adaptable a otros rubros. Ver docs/ARQUITECTURA.md.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "backend:dev": "pnpm --filter backend start:dev",
+    "backend:test": "pnpm --filter backend test",
+    "frontend:dev": "pnpm --filter frontend start",
+    "frontend:test": "pnpm --filter frontend test",
+    "desktop:dev": "pnpm --filter desktop dev",
+    "prisma:migrate": "pnpm --filter backend exec prisma migrate dev",
+    "prisma:studio": "pnpm --filter backend exec prisma studio"
+  }
+}

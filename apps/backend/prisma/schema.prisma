@@ -1,0 +1,471 @@
+// RubroCero — schema de base de datos.
+//
+// Ver docs/ARQUITECTURA.md ("Modelo de datos ampliado" y "Modelo de datos —
+// auditoría completa") para la justificación de cada decisión. Resumen de
+// las reglas de integridad que este schema encodea:
+//   - `movimiento`, `venta` y `historial_cotizacion` son INMUTABLES: nunca se
+//     actualizan ni se borran filas existentes (sin campo updatedAt/deletedAt
+//     a propósito — si hace falta corregir algo, se agrega una fila nueva).
+//   - Todo lo demás usa soft delete (`deletedAt`) — nunca DELETE real sobre
+//     una entidad que puede estar referenciada por historial.
+//   - `precio` es una tabla versionada con vigencia, no un campo mutable.
+//
+// Motor: SQLite para esta instalación (un archivo, cero configuración para
+// el cliente). Cambiar a PostgreSQL el día que haga falta multi-instalación
+// con más volumen es, en principio, solo cambiar el `provider` de abajo —
+// las dos líneas comentadas con "Postgres:" marcan los únicos lugares donde
+// SQLite fuerza una diferencia de tipos (Json nativo vs. String serializado).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // Postgres: provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Catálogo ────────────────────────────────────────────────────────────
+
+model Categoria {
+  id                     String    @id @default(cuid())
+  nombre                 String
+  categoriaPadreId       String?   @map("categoria_padre_id")
+  categoriaPadre         Categoria?  @relation("CategoriaJerarquia", fields: [categoriaPadreId], references: [id])
+  subcategorias          Categoria[] @relation("CategoriaJerarquia")
+  tipoCotizacionDefaultId String?   @map("tipo_cotizacion_default_id")
+  tipoCotizacionDefault  TipoCotizacion? @relation(fields: [tipoCotizacionDefaultId], references: [id])
+  atributos              Atributo[]
+  productos              Producto[]
+  deletedAt              DateTime? @map("deleted_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@map("categoria")
+}
+
+model Marca {
+  id        String    @id @default(cuid())
+  nombre    String
+  productos Producto[]
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("marca")
+}
+
+model Atributo {
+  id          String    @id @default(cuid())
+  categoriaId String    @map("categoria_id")
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  nombre      String
+  tipoDato    String    @map("tipo_dato") // 'texto' | 'numero' | 'booleano' — validado en application, no en el schema
+
+  @@map("atributo")
+}
+
+model Producto {
+  id               String    @id @default(cuid())
+  nombre           String
+  categoriaId      String    @map("categoria_id")
+  categoria        Categoria @relation(fields: [categoriaId], references: [id])
+  marcaId          String?   @map("marca_id")
+  marca            Marca?    @relation(fields: [marcaId], references: [id])
+  unidadMedidaBase String    @map("unidad_medida_base") // 'unidad' | 'kg' | 'litro' | 'metro' ...
+  monedaCosto      String    @default("ARS") @map("moneda_costo") // 'ARS' | 'USD'
+  costo            Float     @default(0)
+  tipoCotizacionId String?   @map("tipo_cotizacion_id") // override puntual del default de la categoría
+  tipoCotizacion   TipoCotizacion? @relation(fields: [tipoCotizacionId], references: [id])
+  variantes        Variante[]
+  deletedAt        DateTime? @map("deleted_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@map("producto")
+}
+
+model Variante {
+  id           String   @id @default(cuid())
+  productoId   String   @map("producto_id")
+  producto     Producto @relation(fields: [productoId], references: [id])
+  sku          String   @unique
+  codigoBarras String?  @unique @map("codigo_barras")
+  atributos    Json     @default("{}") // { "color": "negro", "capacidad_gb": "16" } — Postgres: Json nativo (acá también, SQLite lo serializa igual vía Prisma)
+  stock        Stock[]
+  movimientos  Movimiento[]
+  detalleVenta DetalleVenta[]
+  detalleCompra DetalleCompra[]
+  precios      Precio[]
+  repuestoEnOrdenes DetalleOrdenServicioRepuesto[]
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("variante")
+}
+
+// ── Stock ───────────────────────────────────────────────────────────────
+
+model Deposito {
+  id          String       @id @default(cuid())
+  nombre      String
+  stock       Stock[]
+  movimientos Movimiento[]
+
+  @@map("deposito")
+}
+
+model Stock {
+  varianteId      String   @map("variante_id")
+  variante        Variante @relation(fields: [varianteId], references: [id])
+  depositoId      String   @map("deposito_id")
+  deposito        Deposito @relation(fields: [depositoId], references: [id])
+  cantidad        Float    @default(0)
+  puntoReposicion Float    @default(0) @map("punto_reposicion")
+
+  @@id([varianteId, depositoId])
+  @@map("stock")
+}
+
+// Inmutable — ver nota al principio del archivo. Sin updatedAt ni deletedAt.
+model Movimiento {
+  id             String   @id @default(cuid())
+  varianteId     String   @map("variante_id")
+  variante       Variante @relation(fields: [varianteId], references: [id])
+  depositoId     String   @map("deposito_id")
+  deposito       Deposito @relation(fields: [depositoId], references: [id])
+  tipo           String   // 'venta' | 'compra' | 'ajuste' | 'transferencia' | 'devolucion'
+  cantidad       Float
+  motivo         String?
+  usuarioId      String   @map("usuario_id")
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id])
+  referenciaTipo String?  @map("referencia_tipo") // 'venta' | 'compra' | 'orden_servicio'
+  referenciaId   String?  @map("referencia_id")
+  fecha          DateTime @default(now())
+
+  @@index([varianteId, depositoId])
+  @@index([fecha])
+  @@map("movimiento")
+}
+
+// ── Compras y proveedores ───────────────────────────────────────────────
+
+model Proveedor {
+  id        String   @id @default(cuid())
+  nombre    String
+  contacto  String?
+  compras   Compra[]
+  deletedAt DateTime? @map("deleted_at")
+
+  @@map("proveedor")
+}
+
+model Compra {
+  id           String   @id @default(cuid())
+  proveedorId  String   @map("proveedor_id")
+  proveedor    Proveedor @relation(fields: [proveedorId], references: [id])
+  usuarioId    String   @map("usuario_id")
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id])
+  estado       String   @default("confirmada")
+  total        Float
+  fecha        DateTime @default(now())
+  detalle      DetalleCompra[]
+
+  @@map("compra")
+}
+
+model DetalleCompra {
+  id            String   @id @default(cuid())
+  compraId      String   @map("compra_id")
+  compra        Compra   @relation(fields: [compraId], references: [id])
+  varianteId    String   @map("variante_id")
+  variante      Variante @relation(fields: [varianteId], references: [id])
+  cantidad      Float
+  costoUnitario Float    @map("costo_unitario")
+
+  @@map("detalle_compra")
+}
+
+// ── Clientes ────────────────────────────────────────────────────────────
+
+model Cliente {
+  id         String    @id @default(cuid())
+  nombre     String
+  telefono   String?
+  email      String?
+  dniCuit    String?   @map("dni_cuit")
+  ventas     Venta[]
+  ordenesServicio OrdenServicio[]
+  deletedAt  DateTime? @map("deleted_at")
+
+  @@map("cliente")
+}
+
+// ── Identidad: roles y permisos como catálogo, no enum en código ─────────
+// (ver docs/ARQUITECTURA.md, sección "Roles y permisos": el MVP viene con
+// 4 filas precargadas en el seed — Admin/Encargado/Vendedor/Técnico — sin
+// pantalla para crear roles nuevos, pero la tabla ya soporta agregarlos.)
+
+model Rol {
+  id          String       @id @default(cuid())
+  nombre      String       @unique // 'admin' | 'encargado' | 'vendedor' | 'tecnico'
+  usuarios    Usuario[]
+  permisos    RolPermiso[]
+
+  @@map("rol")
+}
+
+model Permiso {
+  codigo      String       @id // ej: 'ventas:anular', 'precios:modificar'
+  descripcion String
+  roles       RolPermiso[]
+
+  @@map("permiso")
+}
+
+model RolPermiso {
+  rolId         String  @map("rol_id")
+  rol           Rol     @relation(fields: [rolId], references: [id])
+  permisoCodigo String  @map("permiso_codigo")
+  permiso       Permiso @relation(fields: [permisoCodigo], references: [codigo])
+
+  @@id([rolId, permisoCodigo])
+  @@map("rol_permiso")
+}
+
+model Usuario {
+  id            String   @id @default(cuid())
+  nombre        String
+  usuario       String   @unique // nombre de login, no necesariamente un email
+  email         String?
+  passwordHash  String   @map("password_hash")
+  rolId         String   @map("rol_id")
+  rol           Rol      @relation(fields: [rolId], references: [id])
+  ventas        Venta[]
+  compras       Compra[]
+  movimientos   Movimiento[]
+  ordenesServicioAsignadas OrdenServicio[]
+  auditorias    Auditoria[]
+  deletedAt     DateTime? @map("deleted_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("usuario")
+}
+
+// ── Precios ─────────────────────────────────────────────────────────────
+
+model ListaPrecio {
+  id      String   @id @default(cuid())
+  nombre  String
+  tipo    String   // 'minorista' | 'mayorista'
+  precios Precio[]
+
+  @@map("lista_precio")
+}
+
+// Versionado con vigencia — nunca se sobreescribe un precio en el lugar
+// (ver docs/ARQUITECTURA.md, "Diagnóstico": esto es un cambio explícito
+// respecto a modelarlo como un campo mutable).
+model Precio {
+  id            String      @id @default(cuid())
+  listaPrecioId String      @map("lista_precio_id")
+  listaPrecio   ListaPrecio @relation(fields: [listaPrecioId], references: [id])
+  varianteId    String      @map("variante_id")
+  variante      Variante    @relation(fields: [varianteId], references: [id])
+  precio        Float
+  vigenteDesde  DateTime    @default(now()) @map("vigente_desde")
+  vigenteHasta  DateTime?   @map("vigente_hasta") // null = precio activo
+
+  @@map("precio")
+  // TODO (Stage 1): agregar índice único parcial cuando se escriba la migración a mano
+  // (Prisma no expone índices parciales en el schema todavía):
+  //   CREATE UNIQUE INDEX precio_activo_unico ON precio(lista_precio_id, variante_id)
+  //   WHERE vigente_hasta IS NULL;
+}
+
+// ── Ventas ──────────────────────────────────────────────────────────────
+
+model Venta {
+  id                String   @id @default(cuid())
+  numeroCorrelativo Int      @unique @map("numero_correlativo")
+  clienteId         String?  @map("cliente_id")
+  cliente           Cliente? @relation(fields: [clienteId], references: [id])
+  usuarioId         String   @map("usuario_id")
+  usuario           Usuario  @relation(fields: [usuarioId], references: [id])
+  estado            String   @default("confirmada") // 'confirmada' | 'anulada'
+  subtotal          Float
+  descuento         Float    @default(0)
+  impuestos         Float    @default(0)
+  total             Float
+  fecha             DateTime @default(now())
+  detalle           DetalleVenta[]
+  pagos             Pago[]
+
+  @@index([fecha])
+  @@map("venta")
+}
+
+model DetalleVenta {
+  id                    String   @id @default(cuid())
+  ventaId               String   @map("venta_id")
+  venta                 Venta    @relation(fields: [ventaId], references: [id])
+  varianteId            String   @map("variante_id")
+  variante              Variante @relation(fields: [varianteId], references: [id])
+  cantidad              Float
+  precioUnitario        Float    @map("precio_unitario")
+  descuentoUnitario      Float   @default(0) @map("descuento_unitario")
+  // Congelados en el momento de la venta — nunca se recalculan después
+  // (ver docs/ARQUITECTURA.md, sección "Cotización del dólar").
+  tipoCotizacionId      String?  @map("tipo_cotizacion_id")
+  tipoCotizacion        TipoCotizacion? @relation(fields: [tipoCotizacionId], references: [id])
+  valorCotizacionUsado  Float?   @map("valor_cotizacion_usado")
+
+  @@map("detalle_venta")
+}
+
+model MetodoPago {
+  id     String @id @default(cuid())
+  nombre String // 'efectivo' | 'debito' | 'credito' | 'transferencia' | ...
+  pagos  Pago[]
+
+  @@map("metodo_pago")
+}
+
+model Pago {
+  id           String     @id @default(cuid())
+  ventaId      String     @map("venta_id")
+  venta        Venta      @relation(fields: [ventaId], references: [id])
+  metodoPagoId String     @map("metodo_pago_id")
+  metodoPago   MetodoPago @relation(fields: [metodoPagoId], references: [id])
+  monto        Float
+
+  @@map("pago")
+}
+
+// ── Cotizaciones ────────────────────────────────────────────────────────
+
+model TipoCotizacion {
+  id           String   @id @default(cuid())
+  nombre       String   @unique // 'oficial' | 'blue' | 'mep' | 'ccl' | 'mayorista' ...
+  fuente       String   // ej: 'dolarapi.com'
+  activo       Boolean  @default(true)
+  historial    HistorialCotizacion[]
+  categorias   Categoria[]
+  productos    Producto[]
+  detalleVenta DetalleVenta[]
+
+  @@map("tipo_cotizacion")
+}
+
+// Append-only — nunca se actualiza una fila existente, cada consulta a la
+// fuente externa es una fila nueva (así se resuelve "ver cotizaciones
+// anteriores" del pedido original).
+model HistorialCotizacion {
+  id               String         @id @default(cuid())
+  tipoCotizacionId String         @map("tipo_cotizacion_id")
+  tipoCotizacion   TipoCotizacion @relation(fields: [tipoCotizacionId], references: [id])
+  valor            Float
+  fechaHora        DateTime       @default(now()) @map("fecha_hora")
+  fuente           String
+
+  @@index([tipoCotizacionId, fechaHora])
+  @@map("historial_cotizacion")
+}
+
+// ── Comprobantes e impresión ─────────────────────────────────────────────
+
+model Comprobante {
+  id                String   @id @default(cuid())
+  tipo              String   // 'ticket_venta' | 'presupuesto' | 'orden_servicio' ...
+  numero            Int
+  referenciaTipo    String   @map("referencia_tipo") // 'venta' | 'orden_servicio'
+  referenciaId      String   @map("referencia_id")
+  contenidoSnapshot Json     @map("contenido_snapshot") // congelado al emitir — nunca se regenera con datos actuales
+  fecha             DateTime @default(now())
+  trabajosImpresion TrabajoImpresion[]
+
+  @@map("comprobante")
+}
+
+model TrabajoImpresion {
+  id            String      @id @default(cuid())
+  comprobanteId String      @map("comprobante_id")
+  comprobante   Comprobante @relation(fields: [comprobanteId], references: [id])
+  estado        String      @default("pendiente") // 'pendiente' | 'impreso' | 'error'
+  intentos      Int         @default(0)
+  ultimoError   String?     @map("ultimo_error")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@map("trabajo_impresion")
+}
+
+// ── Servicio técnico (Fase 2 — el schema ya existe, la UI/casos de uso no) ─
+
+model OrdenServicio {
+  id          String    @id @default(cuid())
+  clienteId   String    @map("cliente_id")
+  cliente     Cliente   @relation(fields: [clienteId], references: [id])
+  tecnicoId   String?   @map("tecnico_id")
+  tecnico     Usuario?  @relation(fields: [tecnicoId], references: [id])
+  equipo      String
+  problema    String
+  diagnostico String?
+  estado      String    @default("recibido")
+  fechaIngreso DateTime @default(now()) @map("fecha_ingreso")
+  fechaEntrega DateTime? @map("fecha_entrega")
+  presupuesto  Float?
+  manoObra     Float?   @map("mano_obra")
+  repuestos    DetalleOrdenServicioRepuesto[]
+
+  @@map("orden_servicio")
+}
+
+model DetalleOrdenServicioRepuesto {
+  id              String        @id @default(cuid())
+  ordenServicioId String        @map("orden_servicio_id")
+  ordenServicio   OrdenServicio @relation(fields: [ordenServicioId], references: [id])
+  varianteId      String        @map("variante_id")
+  variante        Variante      @relation(fields: [varianteId], references: [id])
+  cantidad        Float
+
+  @@map("detalle_orden_servicio_repuesto")
+}
+
+// ── Auditoría, configuración y backups ───────────────────────────────────
+
+model Auditoria {
+  id            String   @id @default(cuid())
+  usuarioId     String   @map("usuario_id")
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id])
+  accion        String
+  entidad       String
+  entidadId     String   @map("entidad_id")
+  valorAnterior Json?    @map("valor_anterior")
+  valorNuevo    Json?    @map("valor_nuevo")
+  fecha         DateTime @default(now())
+
+  @@index([fecha])
+  @@map("auditoria")
+}
+
+// Fila única (siempre id = "default") — configuración global de esta instalación.
+model ConfiguracionNegocio {
+  id                          String  @id @default("default")
+  nombre                      String  @default("")
+  cuit                        String?
+  direccion                   String?
+  anchoTicket                 Int     @default(80) @map("ancho_ticket") // 58 | 80 (mm)
+  carpetaBackup               String? @map("carpeta_backup")
+  umbralCotizacionVencidaHoras Int    @default(24) @map("umbral_cotizacion_vencida_horas")
+
+  @@map("configuracion_negocio")
+}
+
+model BackupLog {
+  id         String   @id @default(cuid())
+  fecha      DateTime @default(now())
+  ubicacion  String
+  estado     String   // 'ok' | 'error'
+  verificado Boolean  @default(false)
+
+  @@map("backup_log")
+}
