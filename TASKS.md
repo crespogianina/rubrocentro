@@ -31,24 +31,51 @@ Checklist de trabajo dividido en stages, y cada stage en tareas chicas (pensadas
 - [x] Definir: `tipo_cotizacion`, `historial_cotizacion`
 - [x] Definir: `comprobante`, `trabajo_impresion`, `auditoria`, `configuracion_negocio`, `backup_log`
 - [x] Primera migración (`prisma migrate dev`) y revisión manual del `.sql` generado — hecha; se corrigió un bug de Prisma 7.10.0 (default de `Json` sin comillas) y se agregó a mano el índice único parcial de `precio` (ver `apps/backend/prisma/README.md`)
-- [ ] 🔶 Script de seed con datos de ejemplo realistas — hay un `prisma/seed.ts` stub que solo carga `ConfiguracionNegocio`, con un TODO detallado del resto (roles/permisos, admin, categorías, marcas, depósito, tipos de cotización, métodos de pago, ~10-15 productos de ejemplo)
+- [x] Script de seed con datos de ejemplo realistas — `prisma/seed.ts` carga roles/permisos (4 roles, 11 permisos), usuario admin, 6 categorías (con jerarquía), 5 marcas, 1 depósito, 5 tipos de cotización, 4 métodos de pago y 10 productos/13 variantes con stock inicial; todo idempotente (upsert por clave de negocio o id fijo)
 - [x] Documentar en `apps/backend/prisma/README.md` cualquier decisión de modelado que no sea obvia mirando el schema
 
 *Este stage se beneficia de estar 100% resuelto antes de seguir — cambiar el schema a mitad del Stage 2 en adelante genera migraciones desprolijas.*
 
 ## Stage 2 — Backend: dominio y casos de uso (sin HTTP, sin Prisma real todavía)
 
-- [ ] 🔶 Módulo `catalogo`: entidades de dominio (Producto, Variante) + puerto `ProductoRepository` — `Producto` (entidad + factory + validaciones) y el puerto ya están; falta la entidad `Variante`
-- [x] Caso de uso `CrearProducto` + unit tests
-- [ ] Caso de uso `CrearVariante` + unit tests
-- [ ] Módulo `stock`: puerto `StockRepository` + entidad Movimiento
-- [ ] Caso de uso `RegistrarMovimiento` (venta/compra/ajuste) + unit tests — incluyendo el caso "no permitir vender más stock del disponible"
-- [ ] Caso de uso `AjustarStock` (manual, con motivo obligatorio) + unit tests
-- [ ] Módulo `identidad`: hash de contraseña (argon2) + generación/validación de JWT, como funciones puras testeables
-- [ ] Caso de uso `AutenticarUsuario` + unit tests
-- [ ] Módulo `cotizaciones`: puerto `CotizacionProvider` + caso de uso `ObtenerCotizacionVigente` (con lógica de "usar la última cacheada si falla la fuente") + unit tests
+*Orden sugerido: catalogo (cerrar) → stock → identidad → cotizaciones. Son
+paralelizables entre sí si en algún momento hay más de una persona
+trabajando. El módulo `catalogo` es la plantilla concreta del patrón
+domain/application/ports/use-cases — copiá esa estructura en el resto.*
 
-*Todo este stage se escribe y testea sin base de datos real ni backend HTTP — son funciones y clases puras contra interfaces (puertos). Se puede paralelizar por módulo. El módulo `catalogo` sirve de plantilla concreta para el resto (domain/application/ports/use-cases, con su test) — copiá esa estructura en `stock`, `identidad` y `cotizaciones`.*
+### Catalogo (cerrado)
+
+- [x] `Variante` (entidad de dominio) y el puerto `VarianteRepository`
+      (`src/catalogo/domain/variante.entity.ts`,
+      `src/catalogo/application/ports/variante-repository.port.ts`)
+- [x] Caso de uso `CrearProducto` + unit tests
+- [x] Caso de uso `CrearVariante` (valida producto existente vía
+      `ProductoRepository.buscarPorId`, SKU único vía `existeSku`) + unit
+      tests — mismo patrón que `CrearProducto`
+
+### Stock
+
+- [ ] Entidad `Movimiento` (inmutable — ver regla de no-UPDATE/DELETE en
+      CLAUDE.md) + puerto `StockRepository` (registrar movimiento, consultar
+      stock actual por variante/depósito) — sin caso de uso todavía, PR base
+- [ ] Caso de uso `RegistrarMovimiento` para venta, con la validación "no
+      permitir vender más stock del disponible" + unit tests
+- [ ] Extender `RegistrarMovimiento` para compra y ajuste + unit tests
+- [ ] Caso de uso `AjustarStock` (manual, motivo obligatorio) + unit tests
+
+### Identidad
+
+- [ ] Funciones puras testeables: hash de contraseña (argon2) y
+      generación/validación de JWT — sin caso de uso todavía, PR base
+- [ ] Puerto `UsuarioRepository` + caso de uso `AutenticarUsuario`
+      (valida usuario/contraseña, emite JWT) + unit tests
+
+### Cotizaciones
+
+- [ ] Puerto `CotizacionProvider` + value object/entidad para tipo de
+      cotización — PR base
+- [ ] Caso de uso `ObtenerCotizacionVigente`, con fallback a la última
+      cotización cacheada si falla la fuente externa + unit tests
 
 ## Stage 3 — Backend: infraestructura (los adaptadores)
 
