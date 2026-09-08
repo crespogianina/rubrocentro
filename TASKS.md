@@ -31,7 +31,7 @@ Checklist de trabajo dividido en stages, y cada stage en tareas chicas (pensadas
 - [x] Definir: `tipo_cotizacion`, `historial_cotizacion`
 - [x] Definir: `comprobante`, `trabajo_impresion`, `auditoria`, `configuracion_negocio`, `backup_log`
 - [x] Primera migración (`prisma migrate dev`) y revisión manual del `.sql` generado — hecha; se corrigió un bug de Prisma 7.10.0 (default de `Json` sin comillas) y se agregó a mano el índice único parcial de `precio` (ver `apps/backend/prisma/README.md`)
-- [ ] 🔶 Script de seed con datos de ejemplo realistas — hay un `prisma/seed.ts` stub que solo carga `ConfiguracionNegocio`, con un TODO detallado del resto (roles/permisos, admin, categorías, marcas, depósito, tipos de cotización, métodos de pago, ~10-15 productos de ejemplo)
+- [x] Script de seed con datos de ejemplo realistas — `prisma/seed.ts` carga roles/permisos (4 roles, 11 permisos), usuario admin, 6 categorías (con jerarquía), 5 marcas, 1 depósito, 5 tipos de cotización, 4 métodos de pago y 10 productos/13 variantes con stock inicial; todo idempotente (upsert por clave de negocio o id fijo)
 - [x] Documentar en `apps/backend/prisma/README.md` cualquier decisión de modelado que no sea obvia mirando el schema
 
 *Este stage se beneficia de estar 100% resuelto antes de seguir — cambiar el schema a mitad del Stage 2 en adelante genera migraciones desprolijas.*
