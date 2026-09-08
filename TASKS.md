@@ -55,7 +55,7 @@ domain/application/ports/use-cases — copiá esa estructura en el resto.*
 
 ### Stock
 
-- [ ] Entidad `Movimiento` (inmutable — ver regla de no-UPDATE/DELETE en
+- [x] Entidad `Movimiento` (inmutable — ver regla de no-UPDATE/DELETE en
       CLAUDE.md) + puerto `StockRepository` (registrar movimiento, consultar
       stock actual por variante/depósito) — sin caso de uso todavía, PR base
 - [ ] Caso de uso `RegistrarMovimiento` para venta, con la validación "no
