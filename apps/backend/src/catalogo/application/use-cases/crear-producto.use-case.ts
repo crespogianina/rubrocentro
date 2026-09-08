@@ -1,10 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { Producto, MonedaCosto } from '../../domain/producto.entity.js';
-import {
-  PRODUCTO_REPOSITORY,
-  ProductoRepository,
-} from '../ports/producto-repository.port.js';
+import { Producto, type MonedaCosto } from '../../domain/producto.entity.js';
+import { PRODUCTO_REPOSITORY } from '../ports/producto-repository.port.js';
+import type { ProductoRepository } from '../ports/producto-repository.port.js';
 
 export interface CrearProductoInput {
   nombre: string;

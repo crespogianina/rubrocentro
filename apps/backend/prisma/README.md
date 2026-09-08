@@ -28,20 +28,51 @@ docs/ARQUITECTURA.md para el porqué completo de cada una):
   modelaron como `String` con un comentario al lado, no como `enum` de
   Prisma — el conector de SQLite no soporta `enum` nativo; se valida en la
   capa de aplicación (DTOs con `class-validator`).
+- **Índice único parcial en `precio`** (`precio_activo_unico`, solo un precio
+  activo por `lista_precio_id` + `variante_id` con `vigente_hasta IS NULL`):
+  Prisma no expresa índices parciales en `schema.prisma`, así que está
+  agregado a mano al final de `migrations/20260908002804_init/migration.sql`.
+  Si en algún momento se resetea/regenera esa migración inicial, hay que
+  volver a agregar esa línea.
+
+## Prisma 7 — cambios de configuración (ya resueltos en este repo)
+
+El paquete `prisma` está pinneado en `7.10.0`, que rompió compatibilidad
+respecto a lo que documenta `docs/ARQUITECTURA.md` (escrito pensando en una
+versión anterior). Lo que cambió y cómo quedó resuelto:
+
+- **La URL de conexión ya no va en `datasource.url` de `schema.prisma`** —
+  ahora vive en `apps/backend/prisma.config.ts` (`datasource.url`, vía
+  `env('DATABASE_URL')`), que además carga `.env` a mano con
+  `import 'dotenv/config'` (Prisma ya no lo hace automáticamente).
+- **El cliente en runtime necesita un driver adapter explícito** — no alcanza
+  con `new PrismaClient()`. Se usa `@prisma/adapter-better-sqlite3` tanto en
+  `PrismaService` (`src/prisma/prisma.service.ts`) como en `prisma/seed.ts`.
+  Cualquier lugar nuevo que instancie `PrismaClient` directamente (no
+  debería hacer falta — todo pasa por `PrismaService`) necesita el mismo
+  adapter.
+- **El seed ya no se configura en `package.json`** (`"prisma": {"seed": ...}`)
+  sino en `prisma.config.ts` (`migrations.seed`).
+- **Bug conocido de esta versión (7.10.0):** un campo `Json` con
+  `@default("{}")` generaba `DEFAULT {}` sin comillas en la migración de
+  SQLite (SQL inválido, falla `migrate dev`). Por eso `Variante.atributos`
+  no tiene `@default` en el schema — el valor por defecto lo pone la capa de
+  aplicación al crear la variante (Stage 2, caso de uso `CrearVariante`).
 
 ## Validar el schema
 
-Este archivo se escribió y se revisó a mano (balance de llaves, relaciones
-cruzadas, nombres duplicados), pero **no se pudo correr `prisma validate`
-ni `prisma generate`** en el entorno donde se generó este scaffold —
-el proxy de salida de ese entorno bloqueaba la descarga de los binarios de
-Prisma. Lo primero para hacer en una máquina con internet normal:
+Ya se corrió con éxito en este repo (`pnpm install` desde la raíz, después
+`pnpm --filter backend exec prisma validate/migrate dev/generate`) — los 31
+modelos migran limpio a `apps/backend/dev.db` (SQLite, gitignored). Si hace
+falta repetirlo desde cero:
 
 ```bash
+pnpm install                                       # desde la raíz
 cd apps/backend
-pnpm install
+cp .env.example .env   # completar JWT_SECRET
 pnpm exec prisma validate
 pnpm exec prisma migrate dev --name init
+pnpm exec prisma generate
 ```
 
 Si algo no valida, es más probable que sea un error de tipeo puntual que un

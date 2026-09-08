@@ -10,7 +10,7 @@ Checklist de trabajo dividido en stages, y cada stage en tareas chicas (pensadas
 
 ## Stage 0 — Repositorio y monorepo
 
-- [ ] Crear repositorio privado en GitHub
+- [x] Crear repositorio privado en GitHub (`crespogianina/rubrocentro`)
 - [ ] Proteger la rama `main` (require PR + CI antes de mergear)
 - [x] Inicializar monorepo con `pnpm workspaces` (`pnpm-workspace.yaml` con `apps/*` y `packages/*`)
 - [x] Crear `packages/shared-types` (con algunos DTOs ilustrativos, no exhaustivos)
@@ -18,19 +18,19 @@ Checklist de trabajo dividido en stages, y cada stage en tareas chicas (pensadas
 - [x] Crear workflow de GitHub Actions: lint + test en backend, build en frontend, en cada push (`.github/workflows/ci.yml`) — necesita `pnpm-lock.yaml` commiteado para que `--frozen-lockfile` funcione
 - [x] Agregar este `README.md`, `TASKS.md` y `CLAUDE.md` al repo
 - [x] Crear `.gitignore` (node_modules, dist, `.env`, `*.db`, `apps/desktop/release`)
-- [ ] `git init` + primer commit (no se hizo en el entorno donde se armó el scaffold — hacerlo al clonar/mover este repo a tu máquina)
+- [x] `git init` + primer commit
 
 ## Stage 1 — Base de datos (schema completo antes de tocar código de negocio)
 
 - [x] Crear `apps/backend` con NestJS (`nest new`)
-- [x] 🔶 Instalar y configurar Prisma dentro de `apps/backend` — dependencias agregadas y `schema.prisma` escrito completo; falta correr `pnpm install` + `prisma generate` en una máquina con acceso normal a internet (ver nota en `CLAUDE.md`)
+- [x] Instalar y configurar Prisma dentro de `apps/backend` — `pnpm install`, `prisma validate`/`migrate dev`/`generate` corridos con éxito; requirió adaptar el schema y agregar `prisma.config.ts` a la arquitectura de Prisma 7 (ver `apps/backend/prisma/README.md`, sección "Prisma 7 — cambios de configuración")
 - [x] Definir en `schema.prisma`: `categoria` (jerárquica), `marca`, `producto`, `atributo`, `variante`, `deposito`, `stock`, `movimiento`
 - [x] Definir: `rol`, `permiso`, `rol_permiso`, `usuario`
 - [x] Definir: `proveedor`, `compra`, `detalle_compra`, `cliente`, `venta`, `detalle_venta`, `metodo_pago`, `pago`
 - [x] Definir: `precio` (con vigencia — no un campo mutable), `lista_precio`
 - [x] Definir: `tipo_cotizacion`, `historial_cotizacion`
 - [x] Definir: `comprobante`, `trabajo_impresion`, `auditoria`, `configuracion_negocio`, `backup_log`
-- [ ] Primera migración (`prisma migrate dev`) y revisión manual del `.sql` generado — pendiente, requiere correr en una máquina sin la restricción de red del sandbox donde se armó este scaffold
+- [x] Primera migración (`prisma migrate dev`) y revisión manual del `.sql` generado — hecha; se corrigió un bug de Prisma 7.10.0 (default de `Json` sin comillas) y se agregó a mano el índice único parcial de `precio` (ver `apps/backend/prisma/README.md`)
 - [ ] 🔶 Script de seed con datos de ejemplo realistas — hay un `prisma/seed.ts` stub que solo carga `ConfiguracionNegocio`, con un TODO detallado del resto (roles/permisos, admin, categorías, marcas, depósito, tipos de cotización, métodos de pago, ~10-15 productos de ejemplo)
 - [x] Documentar en `apps/backend/prisma/README.md` cualquier decisión de modelado que no sea obvia mirando el schema
 

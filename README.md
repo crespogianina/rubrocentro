@@ -81,7 +81,7 @@ Configuración mínima recomendada desde el día uno:
 git init && git add . && git commit -m "scaffold inicial"
 # (o) git clone <url-del-repo-ya-creado-en-github> y copiá el contenido
 
-pnpm install   # genera pnpm-lock.yaml — commitealo
+pnpm install   # genera pnpm-lock.yaml — commitealo (los scripts nativos de prisma/argon2/better-sqlite3/electron ya están preaprobados en pnpm-workspace.yaml)
 
 # Backend (API local en NestJS)
 cp apps/backend/.env.example apps/backend/.env   # y completá JWT_SECRET
