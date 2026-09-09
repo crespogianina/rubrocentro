@@ -65,7 +65,7 @@ domain/application/ports/use-cases — copiá esa estructura en el resto.*
 
 ### Identidad
 
-- [ ] Funciones puras testeables: hash de contraseña (argon2) y
+- [x] Funciones puras testeables: hash de contraseña (argon2) y
       generación/validación de JWT — sin caso de uso todavía, PR base
 - [ ] Puerto `UsuarioRepository` + caso de uso `AutenticarUsuario`
       (valida usuario/contraseña, emite JWT) + unit tests

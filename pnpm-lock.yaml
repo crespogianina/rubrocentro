@@ -43,6 +43,9 @@ importers:
       class-validator:
         specifier: ^0.14.1
         version: 0.14.4
+      jsonwebtoken:
+        specifier: ^9.0.3
+        version: 9.0.3
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -68,6 +71,9 @@ importers:
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.6
+      '@types/jsonwebtoken':
+        specifier: ^9.0.10
+        version: 9.0.10
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3
