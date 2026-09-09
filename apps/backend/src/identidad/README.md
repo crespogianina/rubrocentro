@@ -1,8 +1,7 @@
 # Módulo `identidad`
 
-Estado: **Stage 2 de TASKS.md en curso** — funciones puras de hash y JWT
-listas; falta el puerto `UsuarioRepository` y el caso de uso
-`AutenticarUsuario`.
+Estado: **Stage 2 de TASKS.md cerrado** — funciones puras de hash/JWT,
+puerto `UsuarioRepository` y caso de uso `AutenticarUsuario` listos.
 
 Usuarios, roles, permisos y autenticación (JWT + argon2). Ver docs/ARQUITECTURA.md, sección "Autenticación y sesiones".
 
@@ -14,9 +13,19 @@ Usuarios, roles, permisos y autenticación (JWT + argon2). Ver docs/ARQUITECTURA
     nada de Nest — ver CLAUDE.md). `jsonwebtoken` ya era una dependencia
     transitiva de `@nestjs/jwt`; se agregó como dependencia directa del
     backend para poder importarla sin depender de un paquete fantasma.
-  - Ambos son funciones puras sin estado ni caso de uso todavía — los usa
-    `AutenticarUsuario` (próxima tarea).
-- `application/`, `infrastructure/`, `presentation/` — **vacío todavía**.
+  - `usuario.entity.ts` — `Usuario`, sin `crear()`/invariantes de
+    construcción todavía: esta tarea solo necesita leer un usuario ya
+    persistido para autenticarlo (`Usuario.reconstruir`). Si más adelante
+    se agrega una pantalla de alta de usuarios, ahí es donde va un
+    `CrearUsuario` con sus propias validaciones — no se adelantaron sin un
+    caso de uso real que las necesite.
+- `application/ports/` — `UsuarioRepository` (`buscarPorUsuario`).
+- `application/use-cases/` — `AutenticarUsuario`: valida usuario/contraseña
+  (mismo mensaje de error para usuario inexistente, inactivo o contraseña
+  incorrecta, a propósito — no dar pistas de cuál falló) y emite un JWT con
+  `{ sub: usuarioId, rol }`.
+- `infrastructure/`, `presentation/` — **vacío todavía** (Stage 3/4:
+  `PrismaUsuarioRepository`, controller de login, Guard de JWT).
 
 Misma estructura que `catalogo/` (domain → application → infrastructure →
 presentation) — ver ese módulo como plantilla del patrón antes de empezar
