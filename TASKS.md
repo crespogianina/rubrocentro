@@ -60,7 +60,7 @@ domain/application/ports/use-cases — copiá esa estructura en el resto.*
       stock actual por variante/depósito) — sin caso de uso todavía, PR base
 - [x] Caso de uso `RegistrarMovimiento` para venta, con la validación "no
       permitir vender más stock del disponible" + unit tests
-- [ ] Extender `RegistrarMovimiento` para compra y ajuste + unit tests
+- [x] Extender `RegistrarMovimiento` para compra y ajuste + unit tests
 - [ ] Caso de uso `AjustarStock` (manual, motivo obligatorio) + unit tests
 
 ### Identidad
