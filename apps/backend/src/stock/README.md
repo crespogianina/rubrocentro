@@ -1,25 +1,31 @@
 # Módulo `stock`
 
-Estado: **Stage 2 de TASKS.md en curso** — entidad `Movimiento`, puerto
-`StockRepository` y caso de uso `RegistrarMovimiento` (venta) listos.
+Estado: **Stage 2 de TASKS.md cerrado** — entidad `Movimiento`, puerto
+`StockRepository` y casos de uso `RegistrarMovimiento` y `AjustarStock`
+listos.
 
 - `domain/` — `Movimiento`, entidad **inmutable** (ver CLAUDE.md): no
   expone ningún método que la modifique después de creada. Validaciones:
-  variante/depósito/usuario obligatorios, cantidad > 0, y un `tipo: 'ajuste'`
-  exige `motivo`.
+  variante/depósito/usuario obligatorios, cantidad > 0 (siempre magnitud,
+  nunca con signo), y `tipo: 'ajuste_alta' | 'ajuste_baja'` exige `motivo`.
+  `tipo` se modela como dos valores separados para alta/baja de ajuste en
+  vez de un campo `direccion` aparte — no requiere migración porque `tipo`
+  ya es un `String` libre en el schema, no un enum de Prisma.
 - `application/ports/` — `StockRepository` (registrar movimiento, consultar
   stock actual por variante/depósito). El caso de uso no sabe si detrás hay
   SQLite, Postgres o un mock de test.
-- `application/use-cases/` — `RegistrarMovimiento`: valida "no vender más
-  stock del disponible" cuando `tipo === 'venta'` (consulta
-  `StockRepository.obtenerStockActual` antes de persistir); `compra` no
-  consulta stock (siempre suma) y `ajuste` delega en la entidad `Movimiento`
-  la exigencia de motivo — los tres tipos tienen test. `transferencia` y
-  `devolucion` quedan soportados genéricamente (la entidad no les exige nada
-  extra) pero sin caso de uso/test dedicado todavía porque no hay una
-  pantalla del MVP que los dispare aún. Falta `AjustarStock` como caso de
-  uso propio si hace falta lógica extra (por ejemplo, resolver el signo del
-  ajuste) sobre un `RegistrarMovimiento` de tipo `ajuste`.
+- `application/use-cases/`:
+  - `RegistrarMovimiento` — valida "no restar más stock del disponible"
+    cuando `tipo` es `'venta'` o `'ajuste_baja'` (consulta
+    `StockRepository.obtenerStockActual` antes de persistir); `compra` y
+    `ajuste_alta` no consultan stock (siempre suman). El resto de las
+    invariantes (motivo en ajustes, cantidad > 0) las resuelve la entidad
+    `Movimiento`. `transferencia` y `devolucion` quedan soportados
+    genéricamente pero sin caso de uso/test dedicado todavía porque no hay
+    una pantalla del MVP que los dispare aún.
+  - `AjustarStock` — wrapper fino sobre `RegistrarMovimiento` pensado para
+    la pantalla de ajuste manual (Stage 6): traduce una entrada explícita
+    `direccion: 'alta' | 'baja'` al `tipo` de movimiento correspondiente.
 - `infrastructure/` — **vacío todavía** (Stage 3): `PrismaStockRepository`,
   responsable de que registrar el movimiento y actualizar `stock.cantidad`
   pasen en la misma transacción.

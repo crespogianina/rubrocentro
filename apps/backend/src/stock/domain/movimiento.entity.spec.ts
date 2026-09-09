@@ -39,18 +39,24 @@ describe('Movimiento', () => {
     expect(() => Movimiento.crear({ ...propsValidas(), usuarioId: ' ' })).toThrow();
   });
 
-  it('rechaza un ajuste sin motivo', () => {
-    expect(() => Movimiento.crear({ ...propsValidas(), tipo: 'ajuste', motivo: null })).toThrow();
-    expect(() => Movimiento.crear({ ...propsValidas(), tipo: 'ajuste', motivo: '   ' })).toThrow();
+  it('rechaza un ajuste (alta o baja) sin motivo', () => {
+    expect(() => Movimiento.crear({ ...propsValidas(), tipo: 'ajuste_alta', motivo: null })).toThrow();
+    expect(() => Movimiento.crear({ ...propsValidas(), tipo: 'ajuste_baja', motivo: '   ' })).toThrow();
   });
 
   it('acepta un ajuste con motivo', () => {
-    const movimiento = Movimiento.crear({
+    const movimientoAlta = Movimiento.crear({
       ...propsValidas(),
-      tipo: 'ajuste',
+      tipo: 'ajuste_alta',
+      motivo: 'Conteo físico encontró más unidades de las registradas',
+    });
+    const movimientoBaja = Movimiento.crear({
+      ...propsValidas(),
+      tipo: 'ajuste_baja',
       motivo: 'Rotura detectada en control de stock',
     });
 
-    expect(movimiento.tipo).toBe('ajuste');
+    expect(movimientoAlta.tipo).toBe('ajuste_alta');
+    expect(movimientoBaja.tipo).toBe('ajuste_baja');
   });
 });

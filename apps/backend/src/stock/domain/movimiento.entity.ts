@@ -8,7 +8,18 @@
 // modifique sus props después de construida. Corregir un movimiento es
 // registrar uno nuevo que lo revierte o ajusta.
 
-export type TipoMovimiento = 'venta' | 'compra' | 'ajuste' | 'transferencia' | 'devolucion';
+// 'ajuste' se modela como dos tipos separados (en vez de un campo `direccion`
+// aparte) porque un ajuste manual puede sumar o restar stock y no hay forma
+// de inferir la dirección desde 'ajuste' solo — ver discusión en el PR que
+// agregó AjustarStock. No requiere migración: `tipo` ya es un String libre
+// en el schema, no un enum de Prisma.
+export type TipoMovimiento =
+  | 'venta'
+  | 'compra'
+  | 'ajuste_alta'
+  | 'ajuste_baja'
+  | 'transferencia'
+  | 'devolucion';
 
 export interface MovimientoProps {
   id: string;
@@ -35,7 +46,7 @@ export class Movimiento {
     if (props.cantidad <= 0) {
       throw new MovimientoInvalidoError('La cantidad de un movimiento debe ser mayor a cero.');
     }
-    if (props.tipo === 'ajuste' && !props.motivo?.trim()) {
+    if ((props.tipo === 'ajuste_alta' || props.tipo === 'ajuste_baja') && !props.motivo?.trim()) {
       // Ver docs/ARQUITECTURA.md, "Operaciones críticas": un ajuste manual
       // de stock siempre requiere motivo, sin excepción.
       throw new MovimientoInvalidoError('Un ajuste de stock necesita un motivo.');

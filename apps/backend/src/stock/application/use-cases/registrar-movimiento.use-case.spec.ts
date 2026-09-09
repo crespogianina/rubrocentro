@@ -87,17 +87,43 @@ describe('RegistrarMovimientoUseCase', () => {
     expect(stockRepositorio.registrarMovimiento).toHaveBeenCalledWith(movimiento);
   });
 
-  it('registra un ajuste con motivo sin consultar el stock disponible', async () => {
+  it('registra un ajuste_alta con motivo sin consultar el stock disponible', async () => {
     const stockRepositorio = crearStockRepositorioFalso(0);
     const useCase = new RegistrarMovimientoUseCase(stockRepositorio);
 
     const movimiento = await useCase.ejecutar(
-      inputBase({ tipo: 'ajuste', cantidad: 2, motivo: 'Rotura detectada en control de stock' }),
+      inputBase({
+        tipo: 'ajuste_alta',
+        cantidad: 2,
+        motivo: 'Conteo físico encontró más unidades de las registradas',
+      }),
     );
 
-    expect(movimiento.tipo).toBe('ajuste');
+    expect(movimiento.tipo).toBe('ajuste_alta');
     expect(stockRepositorio.obtenerStockActual).not.toHaveBeenCalled();
     expect(stockRepositorio.registrarMovimiento).toHaveBeenCalledWith(movimiento);
+  });
+
+  it('registra un ajuste_baja con motivo cuando hay stock suficiente', async () => {
+    const stockRepositorio = crearStockRepositorioFalso(5);
+    const useCase = new RegistrarMovimientoUseCase(stockRepositorio);
+
+    const movimiento = await useCase.ejecutar(
+      inputBase({ tipo: 'ajuste_baja', cantidad: 2, motivo: 'Rotura detectada en control de stock' }),
+    );
+
+    expect(movimiento.tipo).toBe('ajuste_baja');
+    expect(stockRepositorio.registrarMovimiento).toHaveBeenCalledWith(movimiento);
+  });
+
+  it('rechaza un ajuste_baja que supera el stock disponible', async () => {
+    const stockRepositorio = crearStockRepositorioFalso(1);
+    const useCase = new RegistrarMovimientoUseCase(stockRepositorio);
+
+    await expect(
+      useCase.ejecutar(inputBase({ tipo: 'ajuste_baja', cantidad: 5, motivo: 'Rotura' })),
+    ).rejects.toThrow();
+    expect(stockRepositorio.registrarMovimiento).not.toHaveBeenCalled();
   });
 
   it('rechaza un ajuste sin motivo y no persiste nada', async () => {
@@ -105,7 +131,7 @@ describe('RegistrarMovimientoUseCase', () => {
     const useCase = new RegistrarMovimientoUseCase(stockRepositorio);
 
     await expect(
-      useCase.ejecutar(inputBase({ tipo: 'ajuste', cantidad: 2, motivo: null })),
+      useCase.ejecutar(inputBase({ tipo: 'ajuste_alta', cantidad: 2, motivo: null })),
     ).rejects.toThrow();
     expect(stockRepositorio.registrarMovimiento).not.toHaveBeenCalled();
   });

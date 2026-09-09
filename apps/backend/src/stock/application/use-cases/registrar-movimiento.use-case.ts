@@ -15,14 +15,18 @@ export class RegistrarMovimientoUseCase {
   ) {}
 
   async ejecutar(input: RegistrarMovimientoInput): Promise<Movimiento> {
-    if (input.tipo === 'venta') {
+    // 'venta' y 'ajuste_baja' son los únicos tipos que restan stock hoy
+    // (compra/ajuste_alta suman; transferencia/devolucion todavía no tienen
+    // caso de uso que los dispare) — a ninguno de los dos se lo puede dejar
+    // en negativo.
+    if (input.tipo === 'venta' || input.tipo === 'ajuste_baja') {
       const stockActual = await this.stockRepository.obtenerStockActual(
         input.varianteId,
         input.depositoId,
       );
       if (stockActual < input.cantidad) {
         // Regla de negocio (ver docs/ARQUITECTURA.md, "Funcionales" y
-        // CLAUDE.md): no se puede vender más stock del disponible.
+        // CLAUDE.md): no se puede restar más stock del disponible.
         throw new MovimientoInvalidoError(
           `Stock insuficiente: hay ${stockActual} unidad(es) disponible(s) y se pidieron ${input.cantidad}.`,
         );

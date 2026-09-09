@@ -138,7 +138,7 @@ model Movimiento {
   variante       Variante @relation(fields: [varianteId], references: [id])
   depositoId     String   @map("deposito_id")
   deposito       Deposito @relation(fields: [depositoId], references: [id])
-  tipo           String   // 'venta' | 'compra' | 'ajuste' | 'transferencia' | 'devolucion'
+  tipo           String   // 'venta' | 'compra' | 'ajuste_alta' | 'ajuste_baja' | 'transferencia' | 'devolucion'
   cantidad       Float
   motivo         String?
   usuarioId      String   @map("usuario_id")
