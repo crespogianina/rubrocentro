@@ -25,7 +25,13 @@ export interface VarianteDTO {
   atributos: Record<string, string>;
 }
 
-export type TipoMovimiento = 'venta' | 'compra' | 'ajuste' | 'transferencia' | 'devolucion';
+export type TipoMovimiento =
+  | 'venta'
+  | 'compra'
+  | 'ajuste_alta'
+  | 'ajuste_baja'
+  | 'transferencia'
+  | 'devolucion';
 
 export interface MovimientoDTO {
   id: string;
