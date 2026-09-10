@@ -31,3 +31,6 @@ pnpm-debug.log*
 
 # Coverage
 coverage/
+
+# Salidas de sesiones de Claude Code (no forman parte del repo)
+Claude outputs/
