@@ -23,3 +23,8 @@ sección "Backend" (flujo de una request).
   se sume. Un error no mapeado cae a 500 sin exponer el mensaje interno
   (se loguea server-side). Registrado global en `main.ts`
   (`app.useGlobalFilters`).
+- `interceptors/logging.interceptor.ts` — loguea método, URL, status code y
+  duración de cada request (éxito) o método/URL/mensaje de error (falla,
+  como warning) — el status real de un error lo decide
+  `DomainExceptionFilter`, no se duplica esa lógica acá. Registrado global
+  en `main.ts` (`app.useGlobalInterceptors`).

@@ -96,9 +96,13 @@ porqué.*
 - [x] Controller de `identidad` (login) + Guard de autenticación (JWT)
 - [ ] Guard de permisos (por rol, contra el catálogo `rol_permiso`)
 - [x] Filtro global de errores (excepciones de dominio → respuesta HTTP consistente)
-- [ ] Interceptor de logging
+- [x] Interceptor de logging
 - [x] Swagger/OpenAPI en `/api/docs` — configurado en `main.ts`
 - [x] Prefijo de versión `/api/v1` en todas las rutas — configurado en `main.ts`
+
+*Los ítems marcados `[ ]` de este stage ya están resueltos en ramas
+separadas pendientes de merge: `feature/catalogo-controller`,
+`feature/stock-controller`, `feature/guard-permisos`.*
 
 ## Stage 5 — Frontend: base
 

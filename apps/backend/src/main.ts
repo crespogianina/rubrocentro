@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { DomainExceptionFilter } from './common/filters/domain-exception.filter.js';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
 
 // Ver docs/ARQUITECTURA.md, sección "Backend": esta API escucha SOLO en
 // 127.0.0.1 para el MVP (un local, una instalación) — no hay Windows
@@ -12,6 +13,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
   app.useGlobalFilters(new DomainExceptionFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
