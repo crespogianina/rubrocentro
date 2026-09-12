@@ -1,8 +1,7 @@
 # Módulo `stock`
 
-Estado: **Stage 2 cerrado** — entidad `Movimiento`, puerto `StockRepository`
-y casos de uso `RegistrarMovimiento` y `AjustarStock` listos. **Stage 3 en
-curso**: `PrismaStockRepository` ya implementado.
+Estado: **Stage 2 y 3 cerrados**. **Stage 4 (el ítem de este módulo)
+cerrado**: solo se expone el ajuste manual, ver `presentation/` abajo.
 
 - `domain/` — `Movimiento`, entidad **inmutable** (ver CLAUDE.md): no
   expone ningún método que la modifique después de creada. Validaciones:
@@ -32,7 +31,17 @@ curso**: `PrismaStockRepository` ya implementado.
   stock definido (hoy: `transferencia`), revierte también el movimiento ya
   insertado. Integration tests contra el SQLite de prueba compartido
   (`apps/backend/test/prisma-test-db.ts`, el mismo helper de `catalogo`).
-- `presentation/` — **vacío todavía** (Stage 4).
+- `presentation/` — `StockController`: solo `POST /api/v1/stock/ajustes`
+  (`AjustarStockUseCase`), protegido con `JwtAuthGuard` +
+  `@RequierePermiso('stock:ajustar')`. `usuarioId` sale del JWT
+  (`request.usuarioAutenticado.sub`), nunca del body — evita que alguien
+  registre un ajuste "a nombre de" otro usuario. A propósito **no** se
+  expone `RegistrarMovimiento` genérico (venta/compra/transferencia) vía
+  HTTP todavía: no hay controller de ventas/compras (Stage 7) que lo
+  necesite como caller real, y no hay un permiso en `prisma/seed.ts` que
+  module ese endpoint por tipo de movimiento — exponerlo suelto dejaría que
+  cualquier usuario autenticado infle stock arbitrariamente. Se agrega
+  cuando ventas/compras lo llamen internamente.
 
 Misma estructura que `catalogo/` (domain → application → infrastructure →
 presentation) — ver ese módulo como plantilla del patrón.

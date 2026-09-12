@@ -92,7 +92,7 @@ porqué.*
 ## Stage 4 — Backend: presentación (la API REST)
 
 - [ ] Controller de `catalogo` (productos/variantes) + DTOs + Pipes de validación
-- [ ] Controller de `stock` (movimientos)
+- [x] Controller de `stock` (ajuste manual — ver stock/README.md para el alcance)
 - [x] Controller de `identidad` (login) + Guard de autenticación (JWT)
 - [x] Guard de permisos (por rol, contra el catálogo `rol_permiso`)
 - [x] Filtro global de errores (excepciones de dominio → respuesta HTTP consistente)

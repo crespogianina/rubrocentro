@@ -5,12 +5,14 @@ import { AppService } from './app.service.js';
 import { validarEnv } from './config/env.validation.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { IdentidadModule } from './identidad/identidad.module.js';
+import { StockModule } from './stock/stock.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validarEnv }),
     PrismaModule,
     IdentidadModule,
+    StockModule,
   ],
   controllers: [AppController],
   providers: [AppService],
