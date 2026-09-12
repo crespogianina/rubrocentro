@@ -1,8 +1,8 @@
 # Módulo `identidad`
 
-Estado: **Stage 2 cerrado** — funciones puras de hash/JWT, puerto
-`UsuarioRepository` y caso de uso `AutenticarUsuario` listos. **Stage 3 en
-curso**: `PrismaUsuarioRepository` ya implementado.
+Estado: **Stage 2 y 3 cerrados**. **Stage 4 en curso**: controller de login
+y `JwtAuthGuard` (este último vive en `common/guards/`, ver README de ese
+módulo — se aplica por ruta, todavía no hay ningún endpoint que lo use).
 
 Usuarios, roles, permisos y autenticación (JWT + argon2). Ver docs/ARQUITECTURA.md, sección "Autenticación y sesiones".
 
@@ -32,8 +32,12 @@ Usuarios, roles, permisos y autenticación (JWT + argon2). Ver docs/ARQUITECTURA
   `include: { rol: true }`. Integration tests contra el SQLite de prueba
   compartido (`apps/backend/test/prisma-test-db.ts`, el mismo helper de
   `catalogo`/`stock`).
-- `presentation/` — **vacío todavía** (Stage 4: controller de login, Guard
-  de JWT).
+- `presentation/` — `IdentidadController` (`POST /api/v1/auth/login`, sin
+  lógica propia — solo mapea `LoginDto` al input del caso de uso; el
+  secreto/expiración de JWT los lee de env vía `ConfigService`, no del
+  caso de uso). `identidad.module.ts` (en la raíz del módulo, no en
+  `presentation/`, porque conecta las cuatro capas) cablea
+  `PrismaUsuarioRepository` al puerto y se registra en `AppModule`.
 
 Misma estructura que `catalogo/` (domain → application → infrastructure →
 presentation) — ver ese módulo como plantilla del patrón antes de empezar
