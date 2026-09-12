@@ -154,6 +154,15 @@ domain/application/ports/use-cases — copiá esa estructura en el resto.*
 
 ---
 
+## Seguridad — hallazgos de auditoría (2026-09-12)
+
+Ítems que surgieron de una revisión de seguridad puntual sobre el scaffold actual, no de un stage planeado de antemano. Se agregan acá para no perder el rastro; no reordenan los stages de arriba ni bloquean seguir con Stage 2 en adelante.
+
+- [x] Usuario admin del seed con contraseña conocida (`admin123`) y sin forzar cambio en el primer login — reemplazado por una contraseña aleatoria generada en `prisma/seed.ts`, logueada una sola vez por consola. El "forzar cambio en el primer login" completo (flag en `Usuario` + pantalla) queda para cuando exista login real (Stage 4/5) — no adelantarlo sin ese caso de uso.
+- [x] Sin validación de variables de entorno al arrancar — agregado `src/config/env.validation.ts`, conectado en `AppModule` vía `ConfigModule.forRoot({ validate })`: el backend no levanta si `JWT_SECRET` falta, es corto o quedó igual al placeholder de `.env.example`, ni si falta `DATABASE_URL`/`DOLAR_API_URL`/`JWT_EXPIRES_IN` con formato inválido.
+- [ ] Dependencias con vulnerabilidades conocidas (`pnpm audit --prod`: 11 high, 5 moderate, 1 low) — Angular ≤19.2.25 (XSS vía atributos de eventos i18n, DoS por OOM en `formatDate`, envenenamiento de `HttpTransferCache`) y `multer` <2.3.0 (3 DoS, vía `@nestjs/platform-express`). Acción: `ng update @angular/core @angular/cli`, forzar resolución de `multer` a `>=2.3.0`, commitear `pnpm-lock.yaml` actualizado.
+- [ ] Sin `pnpm audit` ni Dependabot en CI — `docs/ARQUITECTURA.md` §18 ya lo marca como "necesario ahora" pero `.github/workflows/ci.yml` no lo corre y no existe `.github/dependabot.yml`.
+
 ## Fuera de esta lista (a propósito)
 
 Rol Técnico y servicio técnico, impresión de comprobantes A4, importador CSV, multi-terminal, ARCA — están en Fase 2/3 del documento de arquitectura, no en este checklist. Agregarlos acá antes de tiempo es la forma más fácil de no terminar nunca la Fase 1.
