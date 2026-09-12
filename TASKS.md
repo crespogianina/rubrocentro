@@ -82,7 +82,7 @@ domain/application/ports/use-cases — copiá esa estructura en el resto.*
 - [ ] `PrismaProductoRepository` implementando el puerto de Stage 2 + integration tests contra SQLite de prueba
 - [ ] `PrismaStockRepository` + integration tests (probar la transacción real: baja de stock + alta de movimiento juntas)
 - [ ] `PrismaUsuarioRepository`
-- [ ] `DolarApiCotizacionProvider` (cliente HTTP a DolarAPI/ArgentinaDatos) + su test con la respuesta mockeada
+- [x] `DolarApiCotizacionProvider` (cliente HTTP a DolarAPI/ArgentinaDatos) + su test con la respuesta mockeada
 - [ ] Adaptador de impresión — versión inicial simulada (loguea el ticket en vez de imprimir de verdad, para no bloquearse esperando el hardware)
 
 ## Stage 4 — Backend: presentación (la API REST)
