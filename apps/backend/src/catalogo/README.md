@@ -1,19 +1,23 @@
 # Módulo `catalogo`
 
-Estado: **Stage 2 cerrado** (dominio y casos de uso — `CrearProducto`,
-`CrearVariante`, plantilla del patrón a repetir en el resto de los
-módulos). **Stage 3 en curso**: `PrismaProductoRepository` ya implementado
-para `Producto`; falta el equivalente para `Variante`.
+Estado: **Stage 2, 3 y el ítem de Stage 4 de este módulo cerrados.**
 
 - `domain/` — entidades puras (`Producto`, `Variante`), sin dependencias de Nest ni Prisma.
 - `application/` — puertos (interfaces) y casos de uso, testeados contra los
   puertos, no contra una base de datos real.
-- `infrastructure/` — `PrismaProductoRepository` (con integration tests
-  contra un SQLite de prueba, ver `apps/backend/test/prisma-test-db.ts`).
-  Falta `PrismaVarianteRepository`.
-- `presentation/` — **vacío todavía** (Stage 4): acá van el controller, los
-  DTOs y el `catalogo.module.ts` que junta todo y se registra en `AppModule`.
+- `infrastructure/` — `PrismaProductoRepository` y `PrismaVarianteRepository`,
+  con integration tests contra un SQLite de prueba
+  (`apps/backend/test/prisma-test-db.ts`).
+- `presentation/` — `CatalogoController` (`POST /api/v1/productos`,
+  `POST /api/v1/productos/:productoId/variantes`), sin lógica propia — solo
+  mapea DTOs a los casos de uso. Protegido con `JwtAuthGuard` (exige estar
+  autenticado) pero **sin** `@RequierePermiso`: el catálogo de permisos
+  (`prisma/seed.ts`) no tiene un código para "crear producto/variante" — a
+  diferencia de `productos:eliminar`, el alta de catálogo es una tarea
+  operativa habitual, no restringida por rol. `catalogo.module.ts` (en la
+  raíz del módulo, no en `presentation/`, porque conecta las cuatro capas)
+  cablea los dos repositorios y se registra en `AppModule`.
 
-No registrar este módulo en `app.module.ts` hasta que `presentation/`
-exista — mientras tanto no hay nada que un módulo de Nest pueda cablear de
-verdad.
+Misma estructura que se repitió en `identidad`/`stock`/`cotizaciones` —
+sigue siendo la plantilla de referencia del patrón domain → application →
+infrastructure → presentation.
