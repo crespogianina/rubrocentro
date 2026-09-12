@@ -93,7 +93,7 @@ porqué.*
 
 - [ ] Controller de `catalogo` (productos/variantes) + DTOs + Pipes de validación
 - [ ] Controller de `stock` (movimientos)
-- [ ] Controller de `identidad` (login) + Guard de autenticación (JWT)
+- [x] Controller de `identidad` (login) + Guard de autenticación (JWT)
 - [ ] Guard de permisos (por rol, contra el catálogo `rol_permiso`)
 - [ ] Filtro global de errores (excepciones de dominio → respuesta HTTP consistente)
 - [ ] Interceptor de logging
