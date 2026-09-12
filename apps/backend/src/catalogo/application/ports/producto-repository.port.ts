@@ -6,7 +6,6 @@ import { Producto } from '../../domain/producto.entity.js';
 export interface ProductoRepository {
   guardar(producto: Producto): Promise<void>;
   buscarPorId(id: string): Promise<Producto | null>;
-  existeSku(sku: string): Promise<boolean>;
 }
 
 export const PRODUCTO_REPOSITORY = Symbol('ProductoRepository');
