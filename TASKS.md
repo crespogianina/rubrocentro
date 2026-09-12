@@ -83,7 +83,12 @@ domain/application/ports/use-cases — copiá esa estructura en el resto.*
 - [ ] `PrismaStockRepository` + integration tests (probar la transacción real: baja de stock + alta de movimiento juntas)
 - [ ] `PrismaUsuarioRepository`
 - [x] `DolarApiCotizacionProvider` (cliente HTTP a DolarAPI/ArgentinaDatos) + su test con la respuesta mockeada
-- [ ] Adaptador de impresión — versión inicial simulada (loguea el ticket en vez de imprimir de verdad, para no bloquearse esperando el hardware)
+- [x] Adaptador de impresión — versión inicial simulada (loguea el ticket en vez de imprimir de verdad, para no bloquearse esperando el hardware)
+
+*`src/impresion/` es un módulo nuevo, no estaba en la lista de placeholders
+original del scaffold — ver su `README.md` para el porqué. Stage 3 queda
+completo apenas se mergeen también `PrismaStockRepository` y
+`PrismaUsuarioRepository` (ramas ya abiertas).*
 
 ## Stage 4 — Backend: presentación (la API REST)
 
