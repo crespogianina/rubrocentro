@@ -1,7 +1,8 @@
 # Módulo `identidad`
 
-Estado: **Stage 2 de TASKS.md cerrado** — funciones puras de hash/JWT,
-puerto `UsuarioRepository` y caso de uso `AutenticarUsuario` listos.
+Estado: **Stage 2 cerrado** — funciones puras de hash/JWT, puerto
+`UsuarioRepository` y caso de uso `AutenticarUsuario` listos. **Stage 3 en
+curso**: `PrismaUsuarioRepository` ya implementado.
 
 Usuarios, roles, permisos y autenticación (JWT + argon2). Ver docs/ARQUITECTURA.md, sección "Autenticación y sesiones".
 
@@ -24,8 +25,15 @@ Usuarios, roles, permisos y autenticación (JWT + argon2). Ver docs/ARQUITECTURA
   (mismo mensaje de error para usuario inexistente, inactivo o contraseña
   incorrecta, a propósito — no dar pistas de cuál falló) y emite un JWT con
   `{ sub: usuarioId, rol }`.
-- `infrastructure/`, `presentation/` — **vacío todavía** (Stage 3/4:
-  `PrismaUsuarioRepository`, controller de login, Guard de JWT).
+- `infrastructure/` — `PrismaUsuarioRepository`: `buscarPorUsuario` no
+  filtra por `deletedAt` en la query (a propósito — `AutenticarUsuario`
+  necesita distinguir "no existe" de "existe pero inactivo" para devolver
+  el mismo mensaje genérico en los dos casos), resuelve `rolNombre` vía
+  `include: { rol: true }`. Integration tests contra el SQLite de prueba
+  compartido (`apps/backend/test/prisma-test-db.ts`, el mismo helper de
+  `catalogo`/`stock`).
+- `presentation/` — **vacío todavía** (Stage 4: controller de login, Guard
+  de JWT).
 
 Misma estructura que `catalogo/` (domain → application → infrastructure →
 presentation) — ver ese módulo como plantilla del patrón antes de empezar
