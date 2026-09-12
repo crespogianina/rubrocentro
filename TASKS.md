@@ -72,9 +72,9 @@ domain/application/ports/use-cases — copiá esa estructura en el resto.*
 
 ### Cotizaciones
 
-- [ ] Puerto `CotizacionProvider` + value object/entidad para tipo de
+- [x] Puerto `CotizacionProvider` + value object/entidad para tipo de
       cotización — PR base
-- [ ] Caso de uso `ObtenerCotizacionVigente`, con fallback a la última
+- [x] Caso de uso `ObtenerCotizacionVigente`, con fallback a la última
       cotización cacheada si falla la fuente externa + unit tests
 
 ## Stage 3 — Backend: infraestructura (los adaptadores)
