@@ -8,6 +8,7 @@
 // Correr con: pnpm --filter backend exec prisma db seed
 
 import 'dotenv/config';
+import { randomBytes } from 'node:crypto';
 import { hash } from 'argon2';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from '@prisma/client';
@@ -82,20 +83,38 @@ async function seedRolesYPermisos(): Promise<Record<string, string>> {
   return idPorNombre;
 }
 
+// 12 caracteres en base64url (~72 bits de entropía) — suficiente para una
+// contraseña temporal que se muestra una sola vez y se espera cambiar.
+function generarContrasenaTemporal(): string {
+  return randomBytes(9).toString('base64url');
+}
+
+// No usa upsert a propósito: si el usuario ya existe no queremos volver a
+// hashear ni tocar su contraseña en cada corrida del seed (ver auditoría de
+// seguridad, TASKS.md — antes generaba siempre el hash de 'admin123', que
+// terminaba siendo una credencial conocida). El "forzar cambio en el primer
+// login" completo (flag + pantalla) queda para cuando exista login real
+// (Stage 4/5) — no lo adelantamos sin ese caso de uso.
 async function seedUsuarioAdmin(rolIdPorNombre: Record<string, string>): Promise<void> {
-  await prisma.usuario.upsert({
-    where: { usuario: 'admin' },
-    update: {},
-    create: {
+  const yaExiste = await prisma.usuario.findUnique({ where: { usuario: 'admin' } });
+  if (yaExiste) return;
+
+  const contrasenaTemporal = generarContrasenaTemporal();
+  await prisma.usuario.create({
+    data: {
       nombre: 'Administrador',
       usuario: 'admin',
-      // Contraseña de arranque solo para desarrollo — cambiarla es lo primero
-      // que hay que hacer en una instalación real (Fase 1: no hay pantalla
-      // de "forzar cambio en primer login" todavía).
-      passwordHash: await hash('admin123'),
+      passwordHash: await hash(contrasenaTemporal),
       rolId: rolIdPorNombre.admin,
     },
   });
+
+  console.log('\n' + '='.repeat(60));
+  console.log('Usuario admin creado con contraseña temporal (no se vuelve a mostrar):');
+  console.log('  usuario:    admin');
+  console.log(`  contraseña: ${contrasenaTemporal}`);
+  console.log('Guardala ahora. Cambiala en cuanto exista pantalla de login.');
+  console.log('='.repeat(60) + '\n');
 }
 
 // ── Catálogo: categorías, marcas ────────────────────────────────────────
