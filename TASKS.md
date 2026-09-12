@@ -79,7 +79,7 @@ domain/application/ports/use-cases — copiá esa estructura en el resto.*
 
 ## Stage 3 — Backend: infraestructura (los adaptadores)
 
-- [ ] `PrismaProductoRepository` implementando el puerto de Stage 2 + integration tests contra SQLite de prueba
+- [x] `PrismaProductoRepository` implementando el puerto de Stage 2 + integration tests contra SQLite de prueba
 - [ ] `PrismaStockRepository` + integration tests (probar la transacción real: baja de stock + alta de movimiento juntas)
 - [ ] `PrismaUsuarioRepository`
 - [ ] `DolarApiCotizacionProvider` (cliente HTTP a DolarAPI/ArgentinaDatos) + su test con la respuesta mockeada
