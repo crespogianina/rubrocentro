@@ -17,7 +17,6 @@ function crearProductoRepositorioFalso(existeProducto = true): ProductoRepositor
   return {
     guardar: vi.fn().mockResolvedValue(undefined),
     buscarPorId: vi.fn().mockResolvedValue(existeProducto ? producto : null),
-    existeSku: vi.fn().mockResolvedValue(false),
   };
 }
 

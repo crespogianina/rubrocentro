@@ -10,7 +10,6 @@ function crearRepositorioFalso(): ProductoRepository {
   return {
     guardar: vi.fn().mockResolvedValue(undefined),
     buscarPorId: vi.fn().mockResolvedValue(null),
-    existeSku: vi.fn().mockResolvedValue(false),
   };
 }
 
