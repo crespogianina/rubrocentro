@@ -94,7 +94,7 @@ porqué.*
 - [ ] Controller de `catalogo` (productos/variantes) + DTOs + Pipes de validación
 - [ ] Controller de `stock` (movimientos)
 - [x] Controller de `identidad` (login) + Guard de autenticación (JWT)
-- [ ] Guard de permisos (por rol, contra el catálogo `rol_permiso`)
+- [x] Guard de permisos (por rol, contra el catálogo `rol_permiso`)
 - [x] Filtro global de errores (excepciones de dominio → respuesta HTTP consistente)
 - [ ] Interceptor de logging
 - [x] Swagger/OpenAPI en `/api/docs` — configurado en `main.ts`
