@@ -1,7 +1,7 @@
 # Módulo `cotizaciones`
 
-Estado: **Stage 2 (dominio y casos de uso) cerrado.** Falta Stage 3
-(infraestructura) — ver TASKS.md.
+Estado: **Stage 2 (dominio y casos de uso) cerrado.** Stage 3 en curso:
+`DolarApiCotizacionProvider` ya implementado; falta `PrismaCotizacionRepository`.
 
 Catálogo de tipos de cotización + historial append-only + cliente de
 DolarAPI.
@@ -19,5 +19,15 @@ DolarAPI.
   a la última cotización cacheada en vez de bloquear (ver
   `docs/ARQUITECTURA.md`, sección "Offline / local-first").
 
-Pendiente para Stage 3: `DolarApiCotizacionProvider` (implementación real
-del puerto `CotizacionProvider`) y `PrismaCotizacionRepository`.
+- `infrastructure/dolarapi-cotizacion.provider.ts` — implementación real de
+  `CotizacionProvider`: DolarAPI (`GET {DOLAR_API_URL}/dolares/{casa}`) como
+  fuente primaria, ArgentinaDatos (`GET
+  https://api.argentinadatos.com/v1/cotizaciones/dolares/{casa}`, tomando
+  el último elemento de la serie histórica) como respaldo si la primera
+  falla o responde con error. Usa el valor de **venta**. Traduce el
+  catálogo `tipo_cotizacion.nombre` a la "casa" de la URL externa (difieren
+  para `mep` → `bolsa` y `ccl` → `contadoconliqui`). Timeout de 5s por
+  request vía `AbortController`. Tests con `fetch` mockeado (`vi.stubGlobal`),
+  sin red real.
+
+Pendiente para Stage 3: `PrismaCotizacionRepository`.
