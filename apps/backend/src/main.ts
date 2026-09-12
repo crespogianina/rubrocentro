@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
+import { DomainExceptionFilter } from './common/filters/domain-exception.filter.js';
 
 // Ver docs/ARQUITECTURA.md, sección "Backend": esta API escucha SOLO en
 // 127.0.0.1 para el MVP (un local, una instalación) — no hay Windows
@@ -10,6 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api/v1');
+  app.useGlobalFilters(new DomainExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
