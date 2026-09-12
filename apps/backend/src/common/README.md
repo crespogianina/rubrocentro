@@ -14,6 +14,15 @@ sección "Backend" (flujo de una request).
   sin volver a decodificar. Se aplica por ruta con `@UseGuards(JwtAuthGuard)`
   — todavía no hay ningún controller protegido que lo use (Stage 4:
   catalogo/stock).
+- `decorators/requiere-permiso.decorator.ts` + `guards/permisos.guard.ts` —
+  tercer eslabón: `@RequierePermiso('stock:ajustar')` en un handler hace que
+  `PermisosGuard` valide `request.usuarioAutenticado.rol` (lo cuelga
+  `JwtAuthGuard`, por eso siempre va después en `@UseGuards(...)`) contra el
+  catálogo `rol_permiso` (consulta Prisma directo — es autorización, no
+  regla de negocio, no justifica puerto/caso de uso propio). Una ruta sin
+  el decorator solo exige estar autenticado. Los códigos de permiso
+  (`ventas:crear`, `stock:ajustar`, etc.) están precargados en
+  `prisma/seed.ts`.
 - `filters/domain-exception.filter.ts` — último eslabón del flujo de una
   request: traduce las excepciones de dominio de cada módulo (clases
   planas que extienden `Error`, sin conocer HTTP) a una respuesta HTTP
